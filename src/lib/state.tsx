@@ -128,24 +128,13 @@ function seed(): EmpireData {
   const now = Date.now();
   return {
     citizens: [
-      {
-        id: "HPN-00001",
-        name: "Гиперион I",
-        email: "emperor@hyperion.state",
-        pinHash: hashPin("0000", "HPN-00001"),
-        status: "approved",
-        createdAt: now - 400 * DAY,
-        province: "aurora",
-        rank: "emperor",
-        light: 100,
-        hyper: 1000000,
-        passportIssuedAt: now - 400 * DAY,
-      },
+      // Демо-гражданин: показывает, что будет после оформления гражданства.
+      // PIN-хэш использует почту как соль — так же, как при настоящей регистрации.
       {
         id: "HPN-77777",
         name: "Орион Вест",
         email: "orion@vest.mail",
-        pinHash: hashPin("1111", "HPN-77777"),
+        pinHash: hashPin("1111", "orion@vest.mail"),
         status: "approved",
         createdAt: now - 32 * DAY,
         decidedAt: now - 31 * DAY,
@@ -236,12 +225,18 @@ function seed(): EmpireData {
   };
 }
 
-const LS_KEY = "hyperion_empire_v1";
+const LS_KEY = "hyperion_empire_v2";
 
 function load(): EmpireData {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (raw) return JSON.parse(raw) as EmpireData;
+    if (raw) {
+      const parsed = JSON.parse(raw) as EmpireData;
+      // защита от устаревших/повреждённых реестров прошлых версий
+      if (Array.isArray(parsed?.citizens) && parsed?.treasury && typeof parsed.treasury.rate === "number") {
+        return parsed;
+      }
+    }
   } catch {
     /* повреждённые данные — начинаем заново */
   }
@@ -274,6 +269,8 @@ interface EmpireApi {
   appoint: (seatIndex: number, citizenId: string | null) => void;
   addProvince: (name: string, capital: string, note: string) => void;
   changePin: (oldPin: string, newPin: string) => { ok: boolean; msg: string };
+  coronate: (name: string, email: string, pin: string) => { ok: boolean; msg: string; id?: string };
+  hasEmperor: boolean;
   resetState: () => void;
 }
 
@@ -515,10 +512,13 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const addNews = useCallback((tag: NewsItem["tag"], title: string, text: string) => {
-    setData((p) => ({
-      ...p,
-      news: [{ id: uid(), tag, title, text, date: Date.now(), author: "Гиперион I" }, ...p.news],
-    }));
+    setData((p) => {
+      const author = p.citizens.find((c) => c.id === p.sessionId)?.name ?? "Император";
+      return {
+        ...p,
+        news: [{ id: uid(), tag, title, text, date: Date.now(), author }, ...p.news],
+      };
+    });
   }, []);
 
   const removeNews = useCallback((id: string) => {
@@ -580,6 +580,50 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     return res;
   }, []);
 
+  /** Восшествие на престол: возможно, только пока трон вакантен. */
+  const coronate = useCallback((name: string, email: string, pin: string) => {
+    let res: { ok: boolean; msg: string; id?: string } = { ok: false, msg: "" };
+    setData((prev) => {
+      if (prev.citizens.some((c) => c.rank === "emperor")) {
+        res = { ok: false, msg: "Трон уже занят. Войдите по государственному ID." };
+        return prev;
+      }
+      const em = email.trim().toLowerCase();
+      if (prev.citizens.some((c) => c.email.toLowerCase() === em && c.status === "approved")) {
+        res = { ok: false, msg: "Эта почта уже числится за гражданином Империи." };
+        return prev;
+      }
+      const now = Date.now();
+      const id = "HPN-00001";
+      const emperor: Citizen = {
+        id,
+        name: name.trim(),
+        email: em,
+        pinHash: hashPin(pin, em),
+        status: "approved",
+        createdAt: now,
+        decidedAt: now,
+        province: "aurora",
+        rank: "emperor",
+        light: 100,
+        hyper: 1000000,
+        passportIssuedAt: now,
+      };
+      const mail: MailMsg = {
+        id: uid(),
+        to: em,
+        subject: "Трон Империи Гиперион занят — приветствуем, Государь",
+        body: `Ваш государственный ID: ${id}. Печать Хартии передана вам. Управляйте реестром, казной и рынком с Трона Императора.`,
+        date: now,
+      };
+      res = { ok: true, msg: `Коронация свершилась. Ваш ID: ${id}.`, id };
+      return { ...prev, citizens: [...prev.citizens, emperor], sessionId: id, mails: [mail, ...prev.mails] };
+    });
+    return res;
+  }, []);
+
+  const hasEmperor = useMemo(() => data.citizens.some((c) => c.rank === "emperor"), [data.citizens]);
+
   const resetState = useCallback(() => {
     localStorage.removeItem(LS_KEY);
     setData(seed());
@@ -609,6 +653,8 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     appoint,
     addProvince,
     changePin,
+    coronate,
+    hasEmperor,
     resetState,
   };
 

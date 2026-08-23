@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, type FormEvent } from "react";
 import { REGIONS } from "../lib/data";
 import {
   RANK_LABEL,
@@ -11,7 +10,126 @@ import {
 } from "../lib/state";
 import { Corners } from "./SectionHead";
 import Crest from "./Crest";
+import Starfield from "./Starfield";
 import { CrownIcon } from "./Symbols";
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+/** Врата Трона: коронация, если трон вакантен; вход по ID, если занят. */
+function ThroneGate() {
+  const { hasEmperor, coronate, login, notify } = useEmpire();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pin, setPin] = useState("");
+  const [pin2, setPin2] = useState("");
+  const [id, setId] = useState("");
+  const [loginPin, setLoginPin] = useState("");
+  const [err, setErr] = useState("");
+  const [shake, setShake] = useState(0);
+
+  const fail = (msg: string) => {
+    setErr(msg);
+    setShake((s) => s + 1);
+  };
+
+  const submitCoronate = (e: FormEvent) => {
+    e.preventDefault();
+    if (name.trim().length < 2) return fail("Укажите имя Государя — не менее 2 символов.");
+    if (!EMAIL_RE.test(email.trim())) return fail("Укажите действительную почту.");
+    if (!/^\d{4,6}$/.test(pin)) return fail("PIN — от 4 до 6 цифр.");
+    if (pin !== pin2) return fail("PIN-коды не совпадают.");
+    const res = coronate(name, email, pin);
+    if (!res.ok) return fail(res.msg);
+    notify(res.msg, "gold");
+  };
+
+  const submitLogin = (e: FormEvent) => {
+    e.preventDefault();
+    const res = login(id, loginPin);
+    if (!res.ok) return fail(res.msg);
+    notify(res.msg, "gold");
+  };
+
+  return (
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-void px-4 py-14">
+      <Starfield density={0.8} />
+      <div className="hud-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-1/3 left-1/2 h-[30rem] w-[30rem] -translate-x-1/2 rounded-full blur-[150px]"
+        style={{ background: "radial-gradient(circle, rgba(226,96,76,0.12), transparent 65%)" }}
+      />
+      <div className="relative w-full max-w-md">
+        <div className="mb-7 flex flex-col items-center text-center">
+          <CrownIcon className="h-14 w-14 text-ember" />
+          <h1 className="font-display mt-4 text-[clamp(1.4rem,4vw,2rem)] font-extrabold tracking-wide text-ink uppercase">
+            Трон Империи
+          </h1>
+          <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-mist">
+            {hasEmperor
+              ? "Трон занят. Вход — по государственному ID Императора и PIN-коду."
+              : "Трон вакантен. Статья I Хартии ждёт гаранта: совершите восшествие."}
+          </p>
+        </div>
+
+        <div key={shake ? `t${shake}` : "t0"} className={`relative border border-ember/35 bg-panel/92 p-7 backdrop-blur-sm ${shake ? "animate-shake" : ""}`}>
+          <Corners className="text-ember/50" />
+          {hasEmperor ? (
+            <form onSubmit={submitLogin} noValidate>
+              <p className="font-mono text-[10px] tracking-[0.3em] text-ember uppercase">Вход Государя</p>
+              <label className="mt-4 block">
+                <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">Государственный ID</span>
+                <input className="field font-mono tracking-[0.15em]" value={id} onChange={(e) => setId(e.target.value.toUpperCase())} placeholder="HPN-XXXXX" />
+              </label>
+              <label className="mt-4 block">
+                <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">PIN-код</span>
+                <input className="field font-mono" type="password" inputMode="numeric" maxLength={6} value={loginPin} onChange={(e) => setLoginPin(e.target.value.replace(/\D/g, ""))} placeholder="••••" />
+              </label>
+              {err && <p className="mt-3 border border-ember/40 bg-ember/10 px-3 py-2 font-mono text-[11px] text-ember">▲ {err}</p>}
+              <button type="submit" className="clip-notch mt-5 w-full bg-ember px-6 py-3.5 font-mono text-[13px] font-bold tracking-[0.25em] text-[#1c0a06] uppercase transition-all duration-300 hover:brightness-110 hover:shadow-[0_0_40px_rgba(226,96,76,0.35)] active:translate-y-0.5">
+                Взойти на Трон
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={submitCoronate} noValidate>
+              <p className="font-mono text-[10px] tracking-[0.3em] text-gold uppercase">Коронация · первое восшествие</p>
+              <label className="mt-4 block">
+                <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">Имя Государя</span>
+                <input className="field" value={name} maxLength={24} onChange={(e) => setName(e.target.value)} placeholder="Как вас назовёт летопись" />
+              </label>
+              <label className="mt-4 block">
+                <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">Почта</span>
+                <input className="field" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Для указов и уведомлений" />
+              </label>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">PIN-код</span>
+                  <input className="field font-mono" type="password" inputMode="numeric" maxLength={6} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))} placeholder="4–6 цифр" />
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block font-mono text-[10px] tracking-[0.2em] text-mist uppercase">Повтор PIN</span>
+                  <input className="field font-mono" type="password" inputMode="numeric" maxLength={6} value={pin2} onChange={(e) => setPin2(e.target.value.replace(/\D/g, ""))} placeholder="Ещё раз" />
+                </label>
+              </div>
+              {err && <p className="mt-3 border border-ember/40 bg-ember/10 px-3 py-2 font-mono text-[11px] text-ember">▲ {err}</p>}
+              <button type="submit" className="clip-notch mt-5 w-full bg-gold px-6 py-3.5 font-mono text-[13px] font-bold tracking-[0.25em] text-[#171006] uppercase transition-all duration-300 hover:bg-goldsoft hover:shadow-[0_0_40px_rgba(227,181,74,0.35)] active:translate-y-0.5">
+                Принять Корону ✦
+              </button>
+              <p className="mt-3 text-center font-mono text-[9px] tracking-[0.2em] text-dim uppercase">
+                Трон можно занять лишь однажды — пока он вакантен
+              </p>
+            </form>
+          )}
+        </div>
+
+        <div className="mt-5 flex items-center justify-center gap-3">
+          <Crest className="h-5 w-5 text-gold/70" />
+          <p className="font-mono text-[10px] tracking-[0.2em] text-dim uppercase">Dum Ordo — Imperium</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const EMPERIOR_TABS = [
   { id: "apps", label: "Заявки" },
@@ -671,20 +789,7 @@ export default function EmperorPanel() {
   const [tab, setTab] = useState<ETab>("apps");
   const pendingCount = data.citizens.filter((c) => c.status === "pending").length;
 
-  if (!me) return <Navigate to="/gate" replace />;
-  if (me.rank !== "emperor") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-void px-6">
-        <div className="max-w-md border border-ember/40 bg-panel p-10 text-center">
-          <CrownIcon className="mx-auto h-12 w-12 text-ember" />
-          <h1 className="font-display mt-4 text-xl font-extrabold tracking-wide text-ink uppercase">Доступ только Императору</h1>
-          <p className="mt-3 text-[13px] leading-relaxed text-mist">
-            Трон Империи закрыт для подданных. Статья I Хартии: абсолютная власть принадлежит Императору — и только ему.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  if (!me || me.rank !== "emperor") return <ThroneGate />;
 
   return (
     <div className="relative min-h-screen bg-void">

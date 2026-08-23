@@ -212,13 +212,16 @@ export default function Gate() {
                     Войти в государство
                   </button>
                   <div className="mt-5 border-t border-line pt-4">
-                    <p className="font-mono text-[9px] tracking-[0.25em] text-dim uppercase">Демо-доступы реестра:</p>
+                    <p className="font-mono text-[9px] tracking-[0.25em] text-dim uppercase">
+                      Демо-версия гражданства — посмотрите, что будет после одобрения:
+                    </p>
                     <div className="mt-2 flex flex-wrap gap-2 font-mono text-[10px]">
-                      <button type="button" onClick={() => { setLoginId("HPN-77777"); setLoginPin("1111"); }} className="border border-line px-2.5 py-1.5 text-mist transition-colors hover:border-hyper/50 hover:text-hyper">
-                        Гражданин · HPN-77777 / 1111
-                      </button>
-                      <button type="button" onClick={() => { setLoginId("HPN-00001"); setLoginPin("0000"); }} className="border border-line px-2.5 py-1.5 text-mist transition-colors hover:border-ember/50 hover:text-ember">
-                        Император · HPN-00001 / 0000
+                      <button
+                        type="button"
+                        onClick={() => { setLoginId("HPN-77777"); setLoginPin("1111"); }}
+                        className="border border-line px-2.5 py-1.5 text-mist transition-colors hover:border-hyper/50 hover:text-hyper"
+                      >
+                        Гражданин Орион Вест · HPN-77777 / PIN 1111
                       </button>
                     </div>
                   </div>

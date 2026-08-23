@@ -159,7 +159,6 @@ export default function PlanetIntro({ onSettle }: PlanetIntroProps) {
 
   const settle = (id: string) => {
     onSettle(id);
-    document.getElementById("passport")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth" });
   };
 
   return (

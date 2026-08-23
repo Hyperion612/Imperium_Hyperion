@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useEmpire } from "../lib/state";
 import Crest from "./Crest";
 
 const LINKS = [
   { href: "#territories", label: "Территории" },
-  { href: "#constitution", label: "Конституция" },
-  { href: "#passport", label: "Паспорт" },
-  { href: "#economy", label: "Казна" },
-  { href: "#ranks", label: "Ранги" },
-  { href: "#assemblies", label: "Собрания" },
+  { href: "#constitution", label: "Хартия" },
+  { href: "#manifest", label: "Манифест" },
 ];
 
 export default function Nav() {
+  const { me } = useEmpire();
+  const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
   const [progress, setProgress] = useState(0);
   const [open, setOpen] = useState(false);
@@ -63,12 +64,31 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a
-            href="#passport"
-            className="clip-notch hidden bg-gold px-5 py-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-[#171006] uppercase transition-all duration-300 hover:bg-goldsoft hover:shadow-[0_0_26px_rgba(227,181,74,0.35)] sm:block"
-          >
-            Стать гражданином
-          </a>
+          {me ? (
+            <>
+              {me.rank === "emperor" && (
+                <button
+                  onClick={() => navigate("/emperor")}
+                  className="clip-notch hidden border border-ember/60 px-5 py-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-ember uppercase transition-all duration-300 hover:bg-ember/10 md:block"
+                >
+                  Трон
+                </button>
+              )}
+              <button
+                onClick={() => navigate("/imperium")}
+                className="clip-notch bg-gold px-5 py-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-[#171006] uppercase transition-all duration-300 hover:bg-goldsoft hover:shadow-[0_0_26px_rgba(227,181,74,0.35)]"
+              >
+                Войти в государство
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => navigate("/gate")}
+              className="clip-notch bg-gold px-5 py-2.5 font-mono text-[11px] font-bold tracking-[0.2em] text-[#171006] uppercase transition-all duration-300 hover:bg-goldsoft hover:shadow-[0_0_26px_rgba(227,181,74,0.35)]"
+            >
+              Врата Империи
+            </button>
+          )}
           <button
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? "Закрыть меню" : "Открыть меню"}
@@ -82,12 +102,10 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* scroll progress */}
       <div className="absolute bottom-0 left-0 h-px w-full bg-line/40" aria-hidden>
         <div className="h-full bg-gradient-to-r from-gold to-hyper" style={{ width: `${progress * 100}%` }} />
       </div>
 
-      {/* mobile menu */}
       <div
         className={`overflow-hidden border-b border-line bg-void/96 backdrop-blur-md transition-all duration-400 lg:hidden ${
           open ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
@@ -104,13 +122,15 @@ export default function Nav() {
               {l.label}
             </a>
           ))}
-          <a
-            href="#passport"
-            onClick={() => setOpen(false)}
+          <button
+            onClick={() => {
+              setOpen(false);
+              navigate(me ? "/imperium" : "/gate");
+            }}
             className="clip-notch mt-3 bg-gold px-5 py-3 text-center font-mono text-[11px] font-bold tracking-[0.2em] text-[#171006] uppercase"
           >
-            Стать гражданином
-          </a>
+            {me ? "Войти в государство" : "Врата Империи"}
+          </button>
         </nav>
       </div>
     </header>

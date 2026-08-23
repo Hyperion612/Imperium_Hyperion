@@ -1,4 +1,5 @@
 import Crest from "./Crest";
+import Flag from "./Flag";
 
 const NAV = [
   { href: "#planet", label: "Планета" },
@@ -31,6 +32,16 @@ export default function Footer() {
             <p className="font-display mt-6 text-[13px] font-semibold tracking-[0.2em] text-goldsoft">
               DUM ORDO — IMPERIUM
             </p>
+            <div className="mt-7 flex items-center gap-4">
+              <div className="w-[66px] shrink-0 border border-line shadow-[0_0_20px_rgba(227,181,74,0.12)]">
+                <Flag className="h-11 w-[66px]" />
+              </div>
+              <p className="font-mono text-[10px] leading-relaxed tracking-[0.22em] text-dim uppercase">
+                Государственный флаг
+                <br />
+                <span className="text-mist">утверждён статьёй X Хартии</span>
+              </p>
+            </div>
           </div>
 
           <div>

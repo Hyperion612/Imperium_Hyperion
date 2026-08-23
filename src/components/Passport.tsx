@@ -5,6 +5,7 @@ import { hashMatrix, usePrefersReducedMotion } from "../lib/hooks";
 import Reveal from "./Reveal";
 import SectionHead, { Corners } from "./SectionHead";
 import Crest from "./Crest";
+import Flag from "./Flag";
 
 interface PassportData {
   name: string;
@@ -72,14 +73,17 @@ function PassportCard({ data, onReissue }: { data: PassportData; onReissue: () =
         <div className="clip-notch relative overflow-hidden border border-gold/40 bg-gradient-to-br from-panel2 via-panel to-abyss p-6 shadow-[0_30px_80px_-30px_rgba(227,181,74,0.25)]">
           <div className="holo-sweep" aria-hidden />
           {/* header */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-center gap-4">
+            <div className="w-[62px] shrink-0 border border-gold/30 shadow-[0_0_18px_rgba(227,181,74,0.15)]">
+              <Flag className="h-[41px] w-[62px]" alt="Флаг Империи Гиперион" />
+            </div>
+            <div className="min-w-0 flex-1">
               <p className="font-mono text-[9px] tracking-[0.35em] text-dim uppercase">Imperium Hyperion</p>
               <p className="font-display mt-1 text-[13px] font-semibold tracking-[0.18em] text-goldsoft uppercase">
                 Цифровой паспорт
               </p>
             </div>
-            <Crest className="h-10 w-10 text-gold" />
+            <Crest className="h-10 w-10 shrink-0 text-gold" />
           </div>
 
           {/* body */}

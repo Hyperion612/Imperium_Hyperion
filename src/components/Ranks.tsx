@@ -2,6 +2,7 @@ import { COUNCIL, RANKS } from "../lib/data";
 import Reveal from "./Reveal";
 import SectionHead, { Corners } from "./SectionHead";
 import Insignia from "./Insignia";
+import Flag from "./Flag";
 
 const ACCENTS = {
   ember: { text: "text-ember", border: "hover:border-ember/60", chip: "border-ember/30 text-ember" },
@@ -58,9 +59,14 @@ export default function Ranks() {
                     — Гиперион I, речь на Первом Собрании
                   </footer>
                 </blockquote>
-                <div className="mt-5 flex items-center gap-3 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
-                  <span className="inline-block h-8 w-8 rounded-full border border-ember/50 text-center text-[16px] leading-8 text-ember">✠</span>
-                  Гербовая печать Императора · верифицировано Сенатом
+                <div className="mt-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 font-mono text-[10px] tracking-[0.2em] text-dim uppercase">
+                    <span className="inline-block h-8 w-8 shrink-0 rounded-full border border-ember/50 text-center text-[16px] leading-8 text-ember">✠</span>
+                    Гербовая печать Императора · верифицировано Сенатом
+                  </div>
+                  <div className="w-[54px] shrink-0 border border-ember/30">
+                    <Flag className="h-9 w-[54px]" alt="Штандарт Императора" />
+                  </div>
                 </div>
               </div>
             </Reveal>

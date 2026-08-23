@@ -2,7 +2,7 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23080c18' stroke='%23e3b54a' stroke-width='2'/%3E%3Cpath d='M16 6l2.4 7.6L26 16l-7.6 2.4L16 26l-2.4-7.6L6 16l7.6-2.4z' fill='%23e3b54a'/%3E%3C/svg%3E" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23080c18' stroke='%23e3b54a' stroke-width='2'/%3E%3Cpath d='M16 6l2.4 7.6L26 16l-7.6 2.4L16 26l-2.4-7.6L6 16l7.6-2.4z' fill='%23e3b54a'/%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Империя Гиперион — добровольное цифровое государство. Конституция, цифровой паспорт, валюта Hyper, провинции, собрания и иерархия рангов." />
     <meta name="theme-color" content="#05070f" />
@@ -13,9 +13,50 @@
       href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <style>
+      html, body { background: #05070f; }
+      #boot {
+        position: fixed; inset: 0; z-index: 100;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px;
+        background: #05070f; color: #e3b54a;
+        font-family: "JetBrains Mono", ui-monospace, monospace;
+      }
+      #boot svg { animation: bootspin 3.2s linear infinite; }
+      @keyframes bootspin { to { transform: rotate(360deg); } }
+      #boot p { margin: 0; font-size: 11px; letter-spacing: 0.35em; text-transform: uppercase; color: #93a0b8; }
+      #boot p b { color: #e3b54a; font-weight: 500; }
+      #boot .bar { width: 180px; height: 2px; background: #1c2740; overflow: hidden; }
+      #boot .bar i { display: block; height: 100%; width: 40%; background: #e3b54a; animation: bootbar 1.4s ease-in-out infinite; }
+      @keyframes bootbar { 0% { transform: translateX(-110%); } 100% { transform: translateX(320%); } }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Прелоадер: исчезает, когда React отрисует приложение.
+           Если он остался — скрипты сборки не загрузились. -->
+      <div id="boot">
+        <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#1c2740" stroke-width="2" />
+          <path d="M32 4a28 28 0 0 1 28 28" stroke="#e3b54a" stroke-width="2" stroke-linecap="round" />
+          <path d="M32 12l4.6 15.4L52 32l-15.4 4.6L32 52l-4.6-15.4L12 32l15.4-4.6z" fill="#e3b54a" opacity="0.9" />
+        </svg>
+        <div class="bar"><i></i></div>
+        <p id="boot-msg"><b>Империя Гиперион</b> · синхронизация…</p>
+      </div>
+      <script>
+        window.setTimeout(function () {
+          var m = document.getElementById("boot-msg");
+          if (m && document.getElementById("boot")) {
+            m.innerHTML = "Скрипт ядра не загрузился. Обновите страницу (Ctrl+F5) или проверьте сборку сайта.";
+          }
+        }, 6000);
+      </script>
+      <noscript>
+        <p style="color:#e3b54a;font-family:monospace;text-align:center;padding:40px">
+          Империи Гиперион требуется включённый JavaScript.
+        </p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

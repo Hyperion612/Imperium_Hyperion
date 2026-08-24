@@ -255,6 +255,8 @@ interface EmpireApi {
   logout: () => void;
   issuePassport: (avatar?: string) => { ok: boolean; msg: string };
   buy: (itemId: string) => { ok: boolean; msg: string };
+  earnHyper: (amount: number) => void;
+  earnLight: (amount: number) => void;
   // император
   decideApplication: (citizenKey: string, approve: boolean, province: string, reason?: string) => void;
   updateCitizen: (id: string, patch: Partial<Citizen>) => void;
@@ -368,6 +370,29 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => setData((p) => ({ ...p, sessionId: null })), []);
+
+  /** Зачисление HYPER гражданину (работа, игры, крафт) — без участия резерва казны. */
+  const earnHyper = useCallback((amount: number) => {
+    setData((p) => {
+      if (!p.sessionId || !amount) return p;
+      return {
+        ...p,
+        citizens: p.citizens.map((c) => (c.id === p.sessionId ? { ...c, hyper: Math.max(0, c.hyper + amount) } : c)),
+      };
+    });
+  }, []);
+
+  const earnLight = useCallback((amount: number) => {
+    setData((p) => {
+      if (!p.sessionId || !amount) return p;
+      return {
+        ...p,
+        citizens: p.citizens.map((c) =>
+          c.id === p.sessionId ? { ...c, light: Math.min(100, Math.max(0, c.light + amount)) } : c,
+        ),
+      };
+    });
+  }, []);
 
   const issuePassport = useCallback((avatar?: string) => {
     let res = { ok: false, msg: "" };
@@ -640,6 +665,8 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     logout,
     issuePassport,
     buy,
+    earnHyper,
+    earnLight,
     decideApplication,
     updateCitizen,
     grantHyper,

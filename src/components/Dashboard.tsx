@@ -11,6 +11,10 @@ import {
 } from "../lib/state";
 import { usePrefersReducedMotion } from "../lib/hooks";
 import PassportCard from "./PassportCard";
+import LifeHome from "./LifeHome";
+import LifeWork from "./LifeWork";
+import LifeCraft from "./LifeCraft";
+import LifeGames from "./LifeGames";
 import Market from "./Market";
 import NewsFeed from "./NewsFeed";
 import Economy from "./Economy";
@@ -25,6 +29,10 @@ import { HyperCoin, LockIcon, SunIcon } from "./Symbols";
 
 const TABS = [
   { id: "passport", label: "Паспорт" },
+  { id: "home", label: "Дом" },
+  { id: "work", label: "Работа" },
+  { id: "craft", label: "Крафт" },
+  { id: "games", label: "Игры" },
   { id: "market", label: "Рынок" },
   { id: "news", label: "Вестник" },
   { id: "treasury", label: "Казна" },
@@ -281,6 +289,10 @@ export default function Dashboard() {
           <LockPanel onGoPassport={() => setTab("passport")} />
         ) : (
           <>
+            {tab === "home" && <LifeHome />}
+            {tab === "work" && <LifeWork />}
+            {tab === "craft" && <LifeCraft />}
+            {tab === "games" && <LifeGames />}
             {tab === "market" && <Market locked={false} />}
             {tab === "news" && <NewsFeed />}
             {tab === "charter" && <div className="-mx-5 sm:-mx-8">{<Constitution />}</div>}

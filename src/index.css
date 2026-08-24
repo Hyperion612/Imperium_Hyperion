@@ -159,6 +159,10 @@ section[id] {
   from { stroke-dashoffset: var(--dash, 1200); }
   to { stroke-dashoffset: 0; }
 }
+@keyframes float-up {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -180%) scale(1.25); }
+}
 @keyframes ticker-glow {
   0%, 100% { text-shadow: 0 0 12px rgba(227, 181, 74, 0.25); }
   50% { text-shadow: 0 0 22px rgba(227, 181, 74, 0.55); }

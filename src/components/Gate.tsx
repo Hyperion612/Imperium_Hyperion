@@ -7,6 +7,7 @@ import { Corners } from "./SectionHead";
 import Crest from "./Crest";
 import Flag from "./Flag";
 import Starfield from "./Starfield";
+import SyncPanel from "./SyncPanel";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -227,6 +228,14 @@ export default function Gate() {
                   </div>
                 </form>
               )}
+            </div>
+          </Reveal>
+        )}
+
+        {!done && (
+          <Reveal delay={180}>
+            <div className="mt-6">
+              <SyncPanel />
             </div>
           </Reveal>
         )}

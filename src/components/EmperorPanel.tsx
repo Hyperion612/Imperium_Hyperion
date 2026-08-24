@@ -12,6 +12,7 @@ import { Corners } from "./SectionHead";
 import Crest from "./Crest";
 import Starfield from "./Starfield";
 import { CrownIcon } from "./Symbols";
+import SyncPanel from "./SyncPanel";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -707,7 +708,7 @@ function MailTab() {
 }
 
 function SecurityTab() {
-  const { changePin, notify, resetState } = useEmpire();
+  const { changePin, notify, resetState, data } = useEmpire();
   const [oldPin, setOldPin] = useState("");
   const [newPin, setNewPin] = useState("");
   const [newPin2, setNewPin2] = useState("");
@@ -728,7 +729,8 @@ function SecurityTab() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="space-y-8">
+      <div className="grid gap-8 lg:grid-cols-2">
       <div className="relative h-fit border border-line bg-panel p-6">
         <Corners />
         <p className="font-mono text-[10px] tracking-[0.3em] text-gold uppercase">Смена PIN Императора</p>
@@ -779,6 +781,17 @@ function SecurityTab() {
             Переписать реестр Империи
           </button>
         )}
+        {data.cloudId && (
+          <p className="mt-4 border-t border-line pt-3 font-mono text-[9.5px] leading-relaxed tracking-[0.12em] text-dim uppercase">
+            Внимание: перезапись отключит это устройство от облачного реестра ({data.cloudId}). Другие устройства
+            останутся синхронизированы.
+          </p>
+        )}
+      </div>
+
+      <div className="mt-8">
+        <SyncPanel />
+      </div>
       </div>
     </div>
   );

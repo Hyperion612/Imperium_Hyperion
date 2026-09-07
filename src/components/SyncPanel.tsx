@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useEmpire } from "../lib/state";
 import { Corners } from "./SectionHead";
 
 const fmtTime = (t: number) =>
   new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+const fmtAgo = (t: number, now: number) => {
+  const s = Math.floor((now - t) / 1000);
+  if (s < 5) return "только что";
+  if (s < 60) return `${s} сек назад`;
+  if (s < 3600) return `${Math.floor(s / 60)} мин назад`;
+  return `${Math.floor(s / 3600)} ч назад`;
+};
 
 /** Панель облачной синхронизации: один реестр Империи на все устройства. */
 export default function SyncPanel({ compact = false }: { compact?: boolean }) {
@@ -28,6 +36,13 @@ export default function SyncPanel({ compact = false }: { compact?: boolean }) {
   const [exportVal, setExportVal] = useState("");
   const [importVal, setImportVal] = useState("");
   const [copied, setCopied] = useState(false);
+  const [now, setNow] = useState(Date.now());
+
+  // обновляем "сейчас" каждую секунду для индикатора
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
 
   const cloudId = data.cloudId;
 
@@ -75,10 +90,13 @@ export default function SyncPanel({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2 font-mono text-[10px] tracking-[0.15em] uppercase">
-          {syncBusy && <span className="animate-soft-pulse text-hyper">⇅ обмен…</span>}
+          {syncBusy && <span className="animate-soft-pulse text-hyper">⇅ синхронизация…</span>}
           {!syncBusy && syncErr && <span className="text-ember">● офлайн</span>}
-          {!syncBusy && !syncErr && cloudId && (
-            <span className="text-hyper">● синхр. {lastSync ? fmtTime(lastSync) : "—"}</span>
+          {!syncBusy && !syncErr && cloudId && lastSync && (
+            <span className="flex items-center gap-1.5 text-hyper">
+              <span className="inline-block h-1.5 w-1.5 animate-soft-pulse rounded-full bg-hyper" />
+              авто-синхр. {fmtAgo(lastSync, now)}
+            </span>
           )}
           {!cloudId && <span className="text-dim">● не подключено</span>}
         </div>
@@ -100,7 +118,8 @@ export default function SyncPanel({ compact = false }: { compact?: boolean }) {
           </div>
           <p className="mt-2 text-[12px] leading-relaxed text-mist">
             Введите этот код на любом другом устройстве (вкладка «Синхронизация» на Вратах) — заявки, граждане и казна
-            станут общими. Обмен идёт автоматически каждые 25 секунд.
+            станут общими. <span className="text-hyper">Синхронизация в реальном времени:</span> изменения автоматически
+            передаются каждые 5 секунд.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <button onClick={pushNow} disabled={syncBusy} className="border border-line px-4 py-2 font-mono text-[10px] tracking-[0.18em] text-mist uppercase transition-colors hover:border-hyper/60 hover:text-hyper disabled:opacity-40">

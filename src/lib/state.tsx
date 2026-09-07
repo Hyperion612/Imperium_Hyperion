@@ -477,6 +477,29 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     [notify],
   );
 
+  // ── автоматическая синхронизация в реальном времени ──
+  useEffect(() => {
+    if (!data.cloudId) return;
+
+    // автосохранение в облако при каждом изменении (с дебаунсом)
+    const pushTimer = window.setTimeout(async () => {
+      if (data.cloudId && dirty.current && !syncBusy) {
+        await doPush(false);
+      }
+    }, 1500); // 1.5 сек дебаунс после последнего изменения
+
+    // polling облака каждые 5 секунд
+    const pollTimer = window.setInterval(async () => {
+      if (!data.cloudId || syncBusy) return;
+      await doPull(false);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(pushTimer);
+      window.clearInterval(pollTimer);
+    };
+  }, [data.cloudId, syncBusy, doPush, doPull]);
+
   const me = useMemo(
     () => data.citizens.find((c) => c.id === data.sessionId && c.status === "approved") ?? null,
     [data.citizens, data.sessionId],

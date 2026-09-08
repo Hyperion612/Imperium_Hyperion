@@ -165,7 +165,7 @@ function PassportIssue({ onIssued }: { onIssued: () => void }) {
 }
 
 export default function Dashboard() {
-  const { me, logout, issuePassport, notify, data, pullNow, syncBusy, syncErr } = useEmpire();
+  const { me, logout, issuePassport, notify } = useEmpire();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabId>("passport");
 
@@ -204,18 +204,6 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-4 font-mono text-[11px]">
-            {data.cloudId && (
-              <button
-                onClick={() => void pullNow()}
-                title="Облачный реестр Империи · нажмите, чтобы обновить"
-                className={`hidden items-center gap-1.5 sm:flex ${syncBusy ? "animate-soft-pulse text-hyper" : syncErr ? "text-ember" : "text-hyper/80"}`}
-              >
-                <svg viewBox="0 0 48 48" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
-                  <path d="M14 36a9 9 0 0 1-1-17.9A12 12 0 0 1 36.5 20 8 8 0 0 1 35 36z" strokeLinejoin="round" />
-                </svg>
-                {syncBusy ? "⇅" : syncErr ? "офлайн" : "облако"}
-              </button>
-            )}
             <span className="hidden items-center gap-1.5 text-gold sm:flex" title="Уровень Света">
               <SunIcon className="h-3.5 w-3.5" /> {me.light}
             </span>

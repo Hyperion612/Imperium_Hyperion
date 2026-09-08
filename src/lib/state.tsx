@@ -1,5 +1,24 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createCloud, decodeState, encodeState, pullCloud, pushCloud } from "./cloud";
+/** Экспорт/импорт реестра одним кодом (работает без облака). */
+export function encodeState(data: EmpireData): string {
+  const json = JSON.stringify(data);
+  const bytes = new TextEncoder().encode(json);
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return "HYP2." + btoa(bin);
+}
+
+export function decodeState(code: string): Record<string, unknown> | null {
+  try {
+    const raw = code.trim();
+    const b64 = raw.startsWith("HYP2.") ? raw.slice(5) : raw;
+    const bin = atob(b64.replace(/\s+/g, ""));
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 
 export type RankId = "resident" | "citizen" | "governor" | "senator" | "chancellor" | "emperor";
 export type CitizenStatus = "pending" | "approved" | "rejected" | "exiled";
@@ -285,14 +304,7 @@ interface EmpireApi {
   coronate: (name: string, email: string, pin: string) => { ok: boolean; msg: string; id?: string };
   hasEmperor: boolean;
   resetState: () => void;
-  // облачная синхронизация
-  lastSync: number | null;
-  syncBusy: boolean;
-  syncErr: boolean;
-  createCloudLink: () => Promise<{ ok: boolean; code?: string; msg: string }>;
-  connectCloud: (code: string) => Promise<{ ok: boolean; msg: string }>;
-  pushNow: () => Promise<void>;
-  pullNow: () => Promise<void>;
+  // экспорт/импорт реестра
   exportCode: () => string;
   importCode: (code: string) => { ok: boolean; msg: string };
 }
@@ -317,149 +329,8 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4200);
   }, []);
 
-  // ── облачная синхронизация реестра (общий для всех устройств) ──
-  const dataRef = useRef(data);
-  useEffect(() => {
-    dataRef.current = data;
-  });
-  const dirty = useRef(false); // локальные изменения, не отправленные в облако
-  const skipDirty = useRef(true); // игнор: первый рендер и приём из облака
-  const remoteAtRef = useRef(0); // updatedAt последней известной облачной версии
-  const [lastSync, setLastSync] = useState<number | null>(null);
-  const [syncBusy, setSyncBusy] = useState(false);
-  const [syncErr, setSyncErr] = useState(false);
-
-  useEffect(() => {
-    if (skipDirty.current) {
-      skipDirty.current = false;
-      return;
-    }
-    dirty.current = true;
-  }, [data]);
-
-  const normalize = (d: Record<string, unknown>): EmpireData => ({
-    ...(d as unknown as EmpireData),
-    cloudId: typeof d.cloudId === "string" ? d.cloudId : null,
-    updatedAt: typeof d.updatedAt === "number" ? d.updatedAt : Date.now(),
-  });
-
-  const doPush = useCallback(
-    async (withToast = false) => {
-      const d = dataRef.current;
-      if (!d.cloudId) return;
-      setSyncBusy(true);
-      setSyncErr(false);
-      const stamped: EmpireData = { ...d, updatedAt: Date.now() };
-      const ok = await pushCloud(d.cloudId, stamped);
-      setSyncBusy(false);
-      if (ok) {
-        remoteAtRef.current = stamped.updatedAt;
-        dirty.current = false;
-        setLastSync(stamped.updatedAt);
-        if (withToast) notify("Реестр выгружен в облако Империи.", "hyper");
-      } else {
-        setSyncErr(true);
-        if (withToast) notify("Облако недоступно — повторите позже.", "ember");
-      }
-    },
-    [notify],
-  );
-
-  const doPull = useCallback(
-    async (withToast = false) => {
-      const d = dataRef.current;
-      if (!d.cloudId) return;
-      setSyncBusy(true);
-      setSyncErr(false);
-      const remote = await pullCloud(d.cloudId);
-      setSyncBusy(false);
-      if (!remote) {
-        setSyncErr(true);
-        if (withToast) notify("Облако недоступно — повторите позже.", "ember");
-        return;
-      }
-      const norm = normalize(remote);
-      if (norm.updatedAt > remoteAtRef.current) {
-        remoteAtRef.current = norm.updatedAt;
-        skipDirty.current = true;
-        dirty.current = false;
-        setData(norm);
-        setLastSync(norm.updatedAt);
-        if (withToast) notify("Реестр обновлён из облака Империи.", "hyper");
-      } else {
-        setLastSync(Date.now());
-      }
-    },
-    [notify],
-  );
-
-  useEffect(() => {
-    const tick = () => {
-      const d = dataRef.current;
-      if (!d.cloudId) return;
-      if (dirty.current) void doPush();
-      else void doPull();
-    };
-    tick();
-    const id = window.setInterval(tick, 25000);
-    const onVis = () => {
-      if (document.hidden && dataRef.current.cloudId && dirty.current) void doPush();
-    };
-    const onUnload = () => {
-      if (dataRef.current.cloudId && dirty.current) void doPush();
-    };
-    document.addEventListener("visibilitychange", onVis);
-    window.addEventListener("pagehide", onUnload);
-    return () => {
-      window.clearInterval(id);
-      document.removeEventListener("visibilitychange", onVis);
-      window.removeEventListener("pagehide", onUnload);
-    };
-  }, [doPush, doPull]);
-
-  /** Создать облачный реестр Империи и получить код синхронизации. */
-  const createCloudLink = useCallback(async (): Promise<{ ok: boolean; code?: string; msg: string }> => {
-    const stamped: EmpireData = { ...dataRef.current, updatedAt: Date.now() };
-    setSyncBusy(true);
-    const code = await createCloud(stamped);
-    setSyncBusy(false);
-    if (!code) return { ok: false, msg: "Облако недоступно. Попробуйте ещё раз или используйте экспорт-код." };
-    remoteAtRef.current = stamped.updatedAt;
-    dirty.current = false;
-    skipDirty.current = true;
-    setData({ ...stamped, cloudId: code });
-    setLastSync(stamped.updatedAt);
-    setSyncErr(false);
-    return { ok: true, code, msg: "Облачный реестр создан." };
-  }, []);
-
-  /** Подключить устройство к существующему реестру по коду. */
-  const connectCloud = useCallback(
-    async (codeRaw: string): Promise<{ ok: boolean; msg: string }> => {
-      const code = codeRaw.trim();
-      // npoint.io возвращает hex-строки (например, "a1b2c3d4e5"), а не числа
-      if (!/^[a-f0-9]{6,}$/i.test(code)) return { ok: false, msg: "Код синхронизации — это строка из облака (например, a1b2c3d4e5)." };
-      setSyncBusy(true);
-      const remote = await pullCloud(code);
-      setSyncBusy(false);
-      if (!remote) return { ok: false, msg: "Реестр с таким кодом в облаке не найден." };
-      const norm = normalize(remote);
-      remoteAtRef.current = norm.updatedAt;
-      skipDirty.current = true;
-      dirty.current = false;
-      setData({ ...norm, cloudId: code });
-      setLastSync(norm.updatedAt);
-      setSyncErr(false);
-      notify("Устройство подключено к реестру Империи.", "hyper");
-      return { ok: true, msg: "Синхронизация установлена." };
-    },
-    [notify],
-  );
-
-  const pushNow = useCallback(async () => doPush(true), [doPush]);
-  const pullNow = useCallback(async () => doPull(true), [doPull]);
-
-  const exportCode = useCallback(() => encodeState(dataRef.current), []);
+  // ── экспорт/импорт реестра (без облака) ──
+  const exportCode = useCallback(() => encodeState(data), []);
 
   const importCode = useCallback(
     (codeRaw: string): { ok: boolean; msg: string } => {
@@ -467,39 +338,17 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
       if (!parsed || !Array.isArray((parsed as { citizens?: unknown }).citizens)) {
         return { ok: false, msg: "Код повреждён или не является реестром Империи." };
       }
-      const norm = normalize(parsed);
-      remoteAtRef.current = norm.updatedAt;
-      skipDirty.current = true;
-      dirty.current = false;
+      const norm: EmpireData = {
+        ...(parsed as unknown as EmpireData),
+        cloudId: null,
+        updatedAt: Date.now(),
+      };
       setData(norm);
-      notify("Реестр импортирован. Устройства с тем же кодом подхватят изменения.", "hyper");
+      notify("Реестр импортирован.", "hyper");
       return { ok: true, msg: "Реестр импортирован." };
     },
     [notify],
   );
-
-  // ── автоматическая синхронизация в реальном времени ──
-  useEffect(() => {
-    if (!data.cloudId) return;
-
-    // автосохранение в облако при каждом изменении (с дебаунсом)
-    const pushTimer = window.setTimeout(async () => {
-      if (data.cloudId && dirty.current && !syncBusy) {
-        await doPush(false);
-      }
-    }, 1500); // 1.5 сек дебаунс после последнего изменения
-
-    // polling облака каждые 5 секунд
-    const pollTimer = window.setInterval(async () => {
-      if (!data.cloudId || syncBusy) return;
-      await doPull(false);
-    }, 5000);
-
-    return () => {
-      window.clearTimeout(pushTimer);
-      window.clearInterval(pollTimer);
-    };
-  }, [data.cloudId, syncBusy, doPush, doPull]);
 
   const me = useMemo(
     () => data.citizens.find((c) => c.id === data.sessionId && c.status === "approved") ?? null,
@@ -888,13 +737,6 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
     coronate,
     hasEmperor,
     resetState,
-    lastSync,
-    syncBusy,
-    syncErr,
-    createCloudLink,
-    connectCloud,
-    pushNow,
-    pullNow,
     exportCode,
     importCode,
   };

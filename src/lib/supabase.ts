@@ -1,13 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// ВАЖНО: Замените эти значения на ваши credentials из Supabase
-// 1. Зайдите на https://supabase.com и создайте проект
-// 2. Скопируйте URL и anon key из Settings -> API
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+// Получаем credentials из переменных окружения
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rahrutqeeuiubqhwumdr.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-if (SUPABASE_URL === 'YOUR_SUPABASE_URL') {
-  console.warn('⚠️ Supabase credentials не настроены. Следуйте инструкции в README.md');
+if (!SUPABASE_ANON_KEY) {
+  console.warn('⚠️ Supabase anon key не настроен. Создайте файл .env и добавьте VITE_SUPABASE_ANON_KEY. См. README.md');
 }
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);

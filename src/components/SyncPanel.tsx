@@ -149,14 +149,13 @@ export default function SyncPanel({ compact = false }: { compact?: boolean }) {
             <div className="mt-3 flex gap-2">
               <input
                 className="field flex-1 font-mono"
-                placeholder="Код синхронизации"
+                placeholder="Код из облака (например, a1b2c3d4e5)"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
-                inputMode="numeric"
               />
               <button
                 onClick={onConnect}
-                disabled={busy || syncBusy || code.trim().length < 4}
+                disabled={busy || syncBusy || code.trim().length < 6}
                 className="border border-hyper/60 px-5 py-2 font-mono text-[11px] font-bold tracking-[0.15em] text-hyper uppercase transition-colors hover:bg-hyper/10 disabled:opacity-40"
               >
                 Войти

@@ -437,7 +437,8 @@ export function EmpireProvider({ children }: { children: ReactNode }) {
   const connectCloud = useCallback(
     async (codeRaw: string): Promise<{ ok: boolean; msg: string }> => {
       const code = codeRaw.trim();
-      if (!/^\d{4,}$/.test(code)) return { ok: false, msg: "Код синхронизации — это число из облака." };
+      // npoint.io возвращает hex-строки (например, "a1b2c3d4e5"), а не числа
+      if (!/^[a-f0-9]{6,}$/i.test(code)) return { ok: false, msg: "Код синхронизации — это строка из облака (например, a1b2c3d4e5)." };
       setSyncBusy(true);
       const remote = await pullCloud(code);
       setSyncBusy(false);

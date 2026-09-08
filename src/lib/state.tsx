@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { getState, saveState, subscribeToChanges } from "./supabase";
 /** Экспорт/импорт реестра одним кодом (работает без облака). */
 export function encodeState(data: EmpireData): string {
   const json = JSON.stringify(data);

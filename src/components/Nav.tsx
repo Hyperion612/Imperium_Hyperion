@@ -61,6 +61,15 @@ export default function Nav() {
               <span aria-hidden className="absolute -bottom-1.5 left-0 h-px w-0 bg-gold transition-all duration-300 group-hover:w-full" />
             </a>
           ))}
+          {me && (
+            <button
+              onClick={() => navigate("/messenger")}
+              className="group relative font-mono text-[11px] tracking-[0.2em] text-hyper uppercase transition-colors hover:text-hyper/80"
+            >
+              Мессенджер
+              <span aria-hidden className="absolute -bottom-1.5 left-0 h-px w-0 bg-hyper transition-all duration-300 group-hover:w-full" />
+            </button>
+          )}
         </nav>
 
         <div className="flex items-center gap-3">

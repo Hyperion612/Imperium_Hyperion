@@ -7,6 +7,7 @@ import Gate from "./components/Gate";
 import Dashboard from "./components/Dashboard";
 import EmperorPanel from "./components/EmperorPanel";
 import ConnectPage from "./components/ConnectPage";
+import Messenger from "./components/Messenger";
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="/imperium" element={<Dashboard />} />
                 <Route path="/emperor" element={<EmperorPanel />} />
                 <Route path="/connect" element={<ConnectPage />} />
+                <Route path="/messenger" element={<Messenger />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
               <Toasts />

@@ -1,47 +1,63 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Получаем credentials из переменных окружения
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://rahrutqeeuiubqhwumdr.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const DEFAULT_URL = 'https://rahrutqeeuiubqhwumdr.supabase.co';
 
-if (!SUPABASE_ANON_KEY) {
-  console.warn('⚠️ Supabase anon key не настроен. Создайте файл .env и добавьте VITE_SUPABASE_ANON_KEY. См. README.md');
+function getCredentials() {
+  const url = localStorage.getItem('supabase_url') || DEFAULT_URL;
+  const key = localStorage.getItem('supabase_key') || '';
+  return { url, key };
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let client: SupabaseClient | null = null;
 
-// Типы для таблицы empire_state
-export interface EmpireStateRow {
-  id: string;
-  data: unknown;
-  updated_at: string;
+export function getSupabase(): SupabaseClient {
+  if (!client) {
+    const { url, key } = getCredentials();
+    if (!key) {
+      console.warn('Supabase key не настроен. Перейдите на /connect для подключения.');
+    }
+    client = createClient(url, key);
+  }
+  return client;
 }
 
-// Получить состояние из Supabase
-export async function getState(): Promise<unknown | null> {
+export function resetSupabase() {
+  client = null;
+}
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(target, prop) {
+    const currentClient = getSupabase();
+    return (currentClient as unknown as Record<string, unknown>)[prop as string];
+  }
+});
+
+export async function getState(): Promise<Record<string, unknown> | null> {
   try {
-    const { data, error } = await supabase
+    const c = getSupabase();
+    const result = await c
       .from('empire_state')
       .select('data')
       .eq('id', 'main')
       .single();
     
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Запись не найдена
-      throw error;
+    if (result.error) {
+      if (result.error.code === 'PGRST116') return null;
+      throw result.error;
     }
     
-    return data?.data || null;
+    const row = result.data as Record<string, unknown> | null;
+    return row?.data as Record<string, unknown> | null;
   } catch (err) {
-    console.error('Ошибка получения состояния из Supabase:', err);
+    console.error('Ошибка получения состояния:', err);
     return null;
   }
 }
 
-// Сохранить состояние в Supabase
-export async function saveState(state: unknown): Promise<boolean> {
+export async function saveState(state: Record<string, unknown>): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const c = getSupabase();
+    const result = await c
       .from('empire_state')
       .upsert({
         id: 'main',
@@ -49,30 +65,31 @@ export async function saveState(state: unknown): Promise<boolean> {
         updated_at: new Date().toISOString()
       });
     
-    if (error) throw error;
+    if (result.error) throw result.error;
     return true;
   } catch (err) {
-    console.error('Ошибка сохранения состояния в Supabase:', err);
+    console.error('Ошибка сохранения состояния:', err);
     return false;
   }
 }
 
-// Подписка на изменения в реальном времени
-export function subscribeToChanges(callback: (data: unknown) => void) {
-  const channel = supabase
+export function subscribeToChanges(callback: (data: Record<string, unknown>) => void) {
+  const c = getSupabase();
+  const channel = c
     .channel('empire-changes')
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'empire_state' },
-      (payload: { new?: { data?: unknown } }) => {
-        if (payload.new?.data) {
-          callback(payload.new.data);
+      (payload) => {
+        const payloadNew = payload.new as Record<string, unknown> | undefined;
+        if (payloadNew?.data) {
+          callback(payloadNew.data as Record<string, unknown>);
         }
       }
     )
     .subscribe();
   
   return () => {
-    supabase.removeChannel(channel);
+    c.removeChannel(channel);
   };
 }

@@ -102,6 +102,26 @@ export default function Landing() {
             </Reveal>
           </div>
         </section>
+
+        {/* Для разработчиков */}
+        <section className="border-t border-line bg-void px-5 py-12 sm:px-10 md:px-16">
+          <div className="mx-auto max-w-6xl">
+            <div className="flex flex-col items-center justify-between gap-6 rounded-lg border border-line bg-panel/30 p-8 md:flex-row">
+              <div className="flex-1">
+                <h3 className="font-display text-xl font-bold text-ink mb-2">Для разработчиков</h3>
+                <p className="text-sm text-mist">
+                  Подключите свой проект Supabase для облачной синхронизации данных между устройствами
+                </p>
+              </div>
+              <button
+                onClick={() => navigate("/connect")}
+                className="clip-notch shrink-0 bg-hyper px-6 py-3 font-mono text-[12px] font-bold tracking-[0.2em] text-[#04211c] uppercase transition-all duration-300 hover:bg-hyper/80 hover:shadow-[0_0_30px_rgba(87,221,196,0.3)]"
+              >
+                Подключить Supabase →
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
       <Footer />
     </div>

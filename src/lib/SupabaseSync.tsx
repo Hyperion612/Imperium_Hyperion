@@ -20,7 +20,7 @@ export default function SupabaseSync({ data, onDataChange }: Props) {
       
       if (cloudData) {
         try {
-          const parsed = cloudData as EmpireData;
+          const parsed = cloudData as unknown as EmpireData;
           // Проверяем, что данные новее локальных
           if (parsed.updatedAt > data.updatedAt) {
             onDataChange(parsed);
@@ -40,7 +40,7 @@ export default function SupabaseSync({ data, onDataChange }: Props) {
   useEffect(() => {
     const unsubscribe = subscribeToChanges((cloudData) => {
       try {
-        const parsed = cloudData as EmpireData;
+        const parsed = cloudData as unknown as EmpireData;
         if (parsed.updatedAt > data.updatedAt) {
           onDataChange(parsed);
           setLastSync(new Date().toLocaleTimeString("ru-RU"));
@@ -62,7 +62,7 @@ export default function SupabaseSync({ data, onDataChange }: Props) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       
       setStatus("syncing");
-      const success = await saveState(data);
+      const success = await saveState(data as unknown as Record<string, unknown>);
       
       if (success) {
         setLastSync(new Date().toLocaleTimeString("ru-RU"));
